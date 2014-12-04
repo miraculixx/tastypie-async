@@ -1,6 +1,7 @@
 import time
 from django import http
 from tpasync.resources import BaseAsyncResource
+from tastypie import fields
 from tastypie.test import ResourceTestCase
 from . import tasks
 
@@ -11,15 +12,20 @@ class EmptyTestResource(BaseAsyncResource):
 
 
 class TestResource(BaseAsyncResource):
+    id = fields.IntegerField()
+    result = fields.CharField()
+
     class Meta:
         include_resource_uri = False
         resource_name = 'test'
-        fields = 'result',
 
     def async_get_detail(self, **kwargs):
         return tasks.successful_task.apply_async()
 
     def async_get_list(self, **kwargs):
+        return tasks.list_task.apply_async()
+
+    def async_patch_list(self, **kwargs):
         pass
 
     def async_post_detail(self, **kwargs):
@@ -45,7 +51,7 @@ class AsyncResourceTest(ResourceTestCase):
 
     def test_successful_task(self):
         # Method returns None, should give HTTP bad request
-        response = self.api_client.get('/api/v1/test/')
+        response = self.api_client.patch('/api/v1/test/', data={})
         self.assertHttpBadRequest(response)
 
         # Send task request and get its Location header
@@ -77,10 +83,6 @@ class AsyncResourceTest(ResourceTestCase):
         self.assertHttpBadRequest(response)
 
     def test_canceling_task(self):
-        # Method returns None, should give HTTP bad request
-        response = self.api_client.get('/api/v1/test/')
-        self.assertHttpBadRequest(response)
-
         # Send task request and get its Location header
         result = self.api_client.get('/api/v1/test/1/')
         self.assertHttpAccepted(result)
@@ -92,10 +94,6 @@ class AsyncResourceTest(ResourceTestCase):
         self.assertHttpGone(response)
 
     def test_failing_task(self):
-        # Method returns None, should give HTTP bad request
-        response = self.api_client.get('/api/v1/test/')
-        self.assertHttpBadRequest(response)
-
         # Send task request and get its Location header
         result = self.api_client.post('/api/v1/test/1/')
         self.assertHttpAccepted(result)
@@ -117,3 +115,40 @@ class AsyncResourceTest(ResourceTestCase):
 
         response = self.api_client.delete(state_url)
         self.assertHttpBadRequest(response)
+
+    def test_list_deserialization(self):
+        # Send task request and get its Location header
+        result = self.api_client.get('/api/v1/test/')
+        self.assertHttpAccepted(result)
+        state_url = result['Location']
+        time.sleep(1)
+        response = self.api_client.get(state_url)
+        self.assertHttpOK(response)
+        data = self.deserialize(response)
+        self.assertEqual(data['state'], 'SUCCESS')
+        self.assertIn('result_uri', data)
+        result_url = data['result_uri']
+
+        # Get results
+        response = self.api_client.get(result_url)
+        self.assertHttpOK(response)
+        data = self.deserialize(response)
+        self.assertEqual(
+            data,
+            {u'meta': {
+                u'previous': None, u'total_count': 2, u'offset': 0,
+                u'limit': 20, u'next': None},
+             u'objects': [
+                 {u'id': 1, u'result': u'ok'},
+                 {u'id': 2, u'result': u'not bad'}]})
+
+        # Get only first page (we use 1 object per page here)
+        response = self.api_client.get(result_url + '?limit=1')
+        self.assertHttpOK(response)
+        data = self.deserialize(response)
+        self.assertEqual(
+            data,
+            {u'meta': {
+                u'previous': None, u'total_count': 2, u'offset': 0,
+                u'limit': 1, u'next': u'/api/v1/test/?limit=1&offset=1'},
+             u'objects': [{u'id': 1, u'result': u'ok'}]})

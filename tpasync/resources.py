@@ -86,12 +86,45 @@ class AsyncResourceMixin(object):
                 result = task.get()
             except Exception, error:
                 result = {'error': unicode(error)}
-            bundle = self.build_bundle(data=result, request=request)
-            bundle = self.full_dehydrate(bundle)
-            bundle = self.alter_detail_data_to_serialize(request, bundle)
-            return self.create_response(request, bundle)
+
+            if isinstance(result, http.HttpResponse):
+                return result
+            elif isinstance(result, basestring):
+                return http.HttpResponse(result)
+            elif isinstance(result, list):
+                objects = result
+                sorted_objects = self.apply_sorting(
+                    objects, options=request.GET)
+
+                paginator = self._meta.paginator_class(
+                    request.GET, sorted_objects,
+                    resource_uri=self.get_resource_uri(),
+                    limit=self._meta.limit, max_limit=self._meta.max_limit,
+                    collection_name=self._meta.collection_name)
+                to_be_serialized = paginator.page()
+
+                # Dehydrate the bundles in preparation for serialization.
+                bundles = []
+
+                for obj in to_be_serialized[self._meta.collection_name]:
+                    bundle = self.build_bundle(obj=obj, request=request)
+                    bundles.append(self.full_dehydrate(bundle, for_list=True))
+
+                to_be_serialized[self._meta.collection_name] = bundles
+                to_be_serialized = self.alter_list_data_to_serialize(
+                    request, to_be_serialized)
+                return self.create_response(request, to_be_serialized)
+            else:
+                bundle = self.build_bundle(obj=result, request=request)
+                bundle = self.full_dehydrate(bundle)
+                bundle = self.alter_detail_data_to_serialize(request, bundle)
+                return self.create_response(request, bundle)
         else:
             return http.HttpNotFound()
+
+    def dehydrate(self, bundle):
+        bundle.data = bundle.obj
+        return bundle
 
     def prepend_urls(self):
         return [
