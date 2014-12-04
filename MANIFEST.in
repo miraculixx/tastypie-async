@@ -1,0 +1,7 @@
+include MANIFEST.in
+include LICENSE
+include README.md
+recursive-include shrcoach/static *
+recursive-include shrcoach/templates *
+recursive-include shrcoach/docs *
+recursive-include shrcoach/locale *
