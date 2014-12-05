@@ -1,0 +1,105 @@
+<html>
+  <head>
+    <title>Double demo</title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+    <!-- JQuery -->
+    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+
+      <form class="form-signin" role="form" method="POST">
+	{% csrf_token %}
+        <h2 class="form-signin-heading">Please enter a number</h2>
+        <label for="number" class="sr-only">Number</label>
+        <input name="number" id="number" class="form-control" placeholder="Number" required>
+        <label for="log" class="sr-only">Request log</label>
+        <textarea id="log" class="form-control" rows="10" placeholder="Request log"></textarea>
+	<div class="row-fluid">
+	  <div class="col-md-6">
+            <button id="submit" class="btn btn-lg btn-primary btn-block" type="submit">Send</button>
+	  </div>
+	  <div class="col-md-6">
+            <button id="cancel" class="btn btn-lg btn-primary btn-block" type="submit">Cancel</button>
+	  </div>
+	</div>
+      </form>
+
+    </div> <!-- /container -->
+
+
+<script>
+$(function(){
+    var cancel_url, is_sent = false
+    $("#submit").click(sendRequest)
+    function sendRequest(evt){
+        evt.preventDefault()
+        if (is_sent)
+            return
+        is_sent = true
+        $.post(
+             "/api/v1/double/", {number: $("#number").val()},
+             function(data, status, jqXHR){
+                 resetLog()
+                 var status_url = jqXHR.getResponseHeader("Location")
+                 cancel_url = status_url
+                 checkStatus(status_url)
+             }
+        )
+    }
+    function checkStatus(status_url){
+      if (!is_sent)
+        return
+      $.get(
+          status_url,
+          function(data){
+              var result_url = data["result_uri"]
+              if (result_url){
+                  cancel_url = null
+                  is_sent = false
+                  getResult(result_url)
+                  log("Done")
+              }
+              else {
+                  log("Not yet...")
+                  setTimeout(function() {checkStatus(status_url)}, 1000)
+              }
+          }
+      )
+    }
+    function getResult(result_url){
+       $.get(result_url, function(data){
+           result = data["result"]
+           log("Result is: " + result)
+       })
+    }
+    function cancel(evt){
+        evt.preventDefault()
+        if (cancel_url){
+            log("Canceling task")
+            $.ajax({url: cancel_url, type: "DELETE"})
+            log("Canceled")
+            cancel_url = null
+            is_sent = false
+        }
+    }
+    $("#cancel").click(cancel)
+    function resetLog(){
+        $("#log").val("Reset")
+    }
+    function log(message){
+        $("#log").val(
+            $("#log").val() + "\n" + message
+        )
+    }
+})
+</script>
+  </body>
+</html>

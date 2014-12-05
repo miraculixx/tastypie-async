@@ -4,34 +4,34 @@ from tastypie import resources, http, utils
 
 
 class AsyncResourceMixin(object):
-    def async_get_detail(self, **kwargs):
+    def async_get_detail(self, request, **kwargs):
         raise NotImplementedError
 
-    def async_post_detail(self, **kwargs):
+    def async_post_detail(self, request, **kwargs):
         raise NotImplementedError
 
-    def async_put_detail(self, **kwargs):
+    def async_put_detail(self, request, **kwargs):
         raise NotImplementedError
 
-    def async_delete_detail(self, **kwargs):
+    def async_delete_detail(self, request, **kwargs):
         raise NotImplementedError
 
-    def async_patch_detail(self, **kwargs):
+    def async_patch_detail(self, request, **kwargs):
         raise NotImplementedError
 
-    def async_get_list(self, **kwargs):
+    def async_get_list(self, request, **kwargs):
         raise NotImplementedError
 
-    def async_post_list(self, **kwargs):
+    def async_post_list(self, request, **kwargs):
         raise NotImplementedError
 
-    def async_put_list(self, **kwargs):
+    def async_put_list(self, request, **kwargs):
         raise NotImplementedError
 
-    def async_delete_list(self, **kwargs):
+    def async_delete_list(self, request, **kwargs):
         raise NotImplementedError
 
-    def async_patch_list(self, **kwargs):
+    def async_patch_list(self, request, **kwargs):
         raise NotImplementedError
 
     def async_state(self, request, task_id, **kwargs):
@@ -154,7 +154,7 @@ class AsyncResourceMixin(object):
             """
             try:
                 result = getattr(self, 'async_' + method)(
-                    **self.remove_api_resource_names(kwargs))
+                    request, **self.remove_api_resource_names(kwargs))
                 if result is None:
                     return http.HttpBadRequest()
             except NotImplementedError:

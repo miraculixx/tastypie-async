@@ -17,7 +17,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     license='commercial',  # example license
-    description='django workflow based on celery',
+    description='Asyncronous resources for tastypie',
     long_description=README,
     url='http://www.shrebo.com/',
     author='Stanislav Shtin',

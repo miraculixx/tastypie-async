@@ -19,16 +19,16 @@ class TestResource(BaseAsyncResource):
         include_resource_uri = False
         resource_name = 'test'
 
-    def async_get_detail(self, **kwargs):
+    def async_get_detail(self, request, **kwargs):
         return tasks.successful_task.apply_async()
 
-    def async_get_list(self, **kwargs):
+    def async_get_list(self, request, **kwargs):
         return tasks.list_task.apply_async()
 
-    def async_patch_list(self, **kwargs):
+    def async_patch_list(self, request, **kwargs):
         pass
 
-    def async_post_detail(self, **kwargs):
+    def async_post_detail(self, request, **kwargs):
         return tasks.failing_task.apply_async()
 
 
@@ -126,7 +126,7 @@ class AsyncResourceTest(ResourceTestCase):
         self.assertHttpOK(response)
         data = self.deserialize(response)
         self.assertEqual(data['state'], 'SUCCESS')
-        self.assertIn('result_uri', data)
+        self.assertIn('rebsult_uri', data)
         result_url = data['result_uri']
 
         # Get results
