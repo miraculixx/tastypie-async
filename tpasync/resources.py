@@ -51,7 +51,9 @@ class AsyncResourceMixin(object):
         """
         task = AsyncResult(task_id)
         if request.method == 'GET':
-            data = {'state': task.state}
+            data = {
+                'state': task.state, 'id': task.id,
+                'resource_uri': request.get_full_path()}
             if task.ready():
                 data['result_uri'] = self._build_reverse_url(
                     'api_async_result',

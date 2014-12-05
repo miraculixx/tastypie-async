@@ -64,6 +64,12 @@ class AsyncResourceTest(ResourceTestCase):
         self.assertHttpOK(response)
         data = self.deserialize(response)
         self.assertEqual(data['state'], 'PENDING')
+        self.assertIn('resource_uri', data)
+        self.assertIn('id', data)
+        task_id = data['id']
+        self.assertEqual(
+            data['resource_uri'],
+            '/api/v1/test/state/{}/'.format(task_id))
         self.assertNotIn('result_uri', data)
         # Wait 4 seconds and retry. This time result_uri should be ready
         time.sleep(4)
