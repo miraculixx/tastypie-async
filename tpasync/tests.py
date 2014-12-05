@@ -126,7 +126,7 @@ class AsyncResourceTest(ResourceTestCase):
         self.assertHttpOK(response)
         data = self.deserialize(response)
         self.assertEqual(data['state'], 'SUCCESS')
-        self.assertIn('rebsult_uri', data)
+        self.assertIn('result_uri', data)
         result_url = data['result_uri']
 
         # Get results
