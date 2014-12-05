@@ -2,6 +2,7 @@
 Created on Dec 3, 2014
 
 @author: Stas Shtin <antisvin@gmail.com>
+@author: Patrick Senti <miraculixx@gmx.ch>
 '''
 import os
 from setuptools import setup, find_packages
@@ -22,6 +23,8 @@ setup(
     url='http://www.shrebo.com/',
     author='Stanislav Shtin',
     author_email='antisvin@gmail.com',
+    maintainer='Patric Senti',
+    maintainer_email='miraculixx@gmx.ch',
     classifiers=[
         'Environment :: Web Environment',
         'Framework :: Django',
