@@ -67,7 +67,7 @@ class AsyncResourceMixin(object):
                 try:
                     task.revoke(terminate=True)
                     return http.HttpGone()
-                except Exception, e:
+                except:
                     pass
             return http.HttpBadRequest()
         else:
@@ -85,7 +85,7 @@ class AsyncResourceMixin(object):
         task = AsyncResult(task_id)
         if task.ready():
             try:
-                result = task.get()
+                result = self.process_result(task.get())
             except Exception, error:
                 result = {'error': unicode(error)}
 
@@ -123,6 +123,12 @@ class AsyncResourceMixin(object):
                 return self.create_response(request, bundle)
         else:
             return http.HttpNotFound()
+
+    def process_result(self, result):
+        """
+        Override this method to add extra processing to task result.
+        """
+        return result
 
     def dehydrate(self, bundle):
         bundle.data = bundle.obj
