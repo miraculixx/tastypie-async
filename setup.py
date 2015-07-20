@@ -36,10 +36,10 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
     install_requires=[
-        'Django==1.6',
+        'Django>=1.6',
         'django-tastypie',
         'South==1.0',
-        'Celery==3.1.16',
+        'Celery>=3.1.16',
         'pytz',
     ],
     dependency_links=[
