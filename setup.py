@@ -11,7 +11,7 @@ README = open(os.path.join(os.path.dirname(__file__), 'README.md')).read()
 
 setup(
     name='tastypie-async',
-    version='0.1.1',
+    version='0.1.3',
     packages=find_packages(),
     include_package_data=True,
     license='commercial',  # example license
