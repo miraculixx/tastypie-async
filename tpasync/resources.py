@@ -1,7 +1,10 @@
-from celery.result import AsyncResult
+from celery.result import AsyncResult, EagerResult
+from django.conf import settings
 from django.conf.urls import url
 from tastypie import resources, http, utils
 
+# use for dev/test only!
+EAGER_RESULTS={}
 
 class AsyncResourceMixin(object):
     def async_get_detail(self, request, **kwargs):
@@ -49,7 +52,10 @@ class AsyncResourceMixin(object):
 
         Other methods are forbidden.
         """
-        task = AsyncResult(task_id)
+        if not getattr(settings, 'CELERY_ALWAYS_EAGER'):
+            task = AsyncResult(task_id)
+        else:
+            task = EAGER_RESULTS[task_id]
         if request.method == 'GET':
             data = {
                 'state': task.state, 'id': task.id,
@@ -82,7 +88,11 @@ class AsyncResourceMixin(object):
         If request is not ready (or doesn't exist - we can't tell this),
         return Http 404 Not Found.
         """
-        task = AsyncResult(task_id)
+        # hack to allow local testing
+        if not getattr(settings, 'CELERY_ALWAYS_EAGER'):
+            task = AsyncResult(task_id)
+        else:
+            task = EAGER_RESULTS[task_id]
         if task.ready():
             try:
                 result = self.process_result(task.get())
@@ -169,6 +179,8 @@ class AsyncResourceMixin(object):
                 return http.HttpNotImplemented()
 
             if isinstance(result, AsyncResult):
+                if isinstance(result, EagerResult):
+                    EAGER_RESULTS[result.id] = result
                 response = http.HttpAccepted()
                 response['Location'] = self._build_reverse_url(
                     'api_async_state',
