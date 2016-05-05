@@ -38,7 +38,6 @@ setup(
     install_requires=[
         'Django>=1.6',
         'django-tastypie',
-        'South==1.0',
         'Celery>=3.1.16',
         'pytz',
     ],
