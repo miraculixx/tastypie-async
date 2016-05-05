@@ -2,8 +2,9 @@ import time
 from django import http
 from tpasync.resources import BaseAsyncResource
 from tastypie import fields
-from tastypie.test import ResourceTestCase
+from tastypie.test import ResourceTestCaseMixin
 from . import tasks
+from django.test.testcases import TestCase
 
 
 class EmptyTestResource(BaseAsyncResource):
@@ -16,7 +17,6 @@ class TestResource(BaseAsyncResource):
     result = fields.CharField()
 
     class Meta:
-        include_resource_uri = False
         resource_name = 'test'
 
     def async_get_detail(self, request, **kwargs):
@@ -32,7 +32,7 @@ class TestResource(BaseAsyncResource):
         return tasks.failing_task.apply_async()
 
 
-class AsyncResourceTest(ResourceTestCase):
+class AsyncResourceTest(ResourceTestCaseMixin, TestCase):
     def setUp(self):
         super(AsyncResourceTest, self).setUp()
         self.empty_resource = EmptyTestResource()
@@ -134,7 +134,7 @@ class AsyncResourceTest(ResourceTestCase):
         self.assertEqual(data['state'], 'SUCCESS')
         self.assertIn('result_uri', data)
         result_url = data['result_uri']
-
+        print result_url
         # Get results
         response = self.api_client.get(result_url)
         self.assertHttpOK(response)

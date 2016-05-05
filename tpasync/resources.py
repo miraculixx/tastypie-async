@@ -4,9 +4,11 @@ from django.conf.urls import url
 from tastypie import resources, http, utils
 
 # use for dev/test only!
-EAGER_RESULTS={}
+EAGER_RESULTS = {}
+
 
 class AsyncResourceMixin(object):
+
     def async_get_detail(self, request, **kwargs):
         raise NotImplementedError
 
@@ -126,6 +128,10 @@ class AsyncResourceMixin(object):
                 to_be_serialized = self.alter_list_data_to_serialize(
                     request, to_be_serialized)
                 return self.create_response(request, to_be_serialized)
+            elif isinstance(result, dict):
+                bundle = self.build_bundle(obj=result, request=request)
+                self.full_dehydrate(bundle)
+                return self.create_response(request, bundle)
             else:
                 bundle = self.build_bundle(obj=result, request=request)
                 bundle = self.full_dehydrate(bundle)
@@ -141,7 +147,8 @@ class AsyncResourceMixin(object):
         return result
 
     def dehydrate(self, bundle):
-        bundle.data = bundle.obj
+        if bundle.obj:
+            bundle.data = bundle.obj
         return bundle
 
     def prepend_urls(self):
@@ -156,7 +163,10 @@ class AsyncResourceMixin(object):
                 self.wrap_view('async_result'), name="api_async_result")
         ]
 
-    def _async_method(method):
+    def detail_uri_kwargs(self, bundle_or_obj):
+        raise NotImplementedError()
+
+    def _async_method(method):  # @NoSelf
         """
         This is a wrapper that's used to generate methods like
         VERB_KIND using hooks named async_VERB_KIND.
